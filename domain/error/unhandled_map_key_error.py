@@ -1,0 +1,3 @@
+
+class UnhandledMapKeyError(Exception):
+    ...
