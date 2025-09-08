@@ -1,9 +1,11 @@
 from os import getenv
+from domain.singleton.singleton import singleton
 from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
 
+@singleton
 class DeepSeekModel:
     def __init__(self, model_name: str = "gpt-4o") -> None:
         api_key = getenv("DEEPSEEK_API_KEY")
