@@ -5,8 +5,6 @@ from langgraph.types import Command
 
 
 class ContentGeneratorAgent:
-    system_prompt: str = """You are a book writter. Given the pla, the title and the previous content, write some content. You will only return the written content."""
-
     def __init__(self) -> None:
         pass
         
@@ -19,19 +17,26 @@ class ContentGeneratorAgent:
             return Command(update={"tasks": tasks, "results": results}, goto="aggregator")
 
         task = tasks[0]
-        previous_content = "\n".join(r["content"] for r in results)
+        previous_content = results[-1]["content"] if results else ""
         global_plan = state.get("plan")
 
             
         prompt = ChatPromptTemplate.from_template("""
-        Tu écris un ebook en suivant ce plan global :
+        You'll written book or ebook following this plan (for coherence only, do not rewrite it) :
         {global_plan}
-
-        Contexte déjà écrit :
+        You will write only the chapter that i will provide you.
+        If it's a ghost chapter, just write the content.
+        In case of ghosts chapter, just consider you're continuing the chapter before.
+        You will be consistent, respecting the tone and vocabulary already used.
+        You will try to fit at best the number of words.
+        If it's not a ghost chapter, you can write the chapter title.
+        If it's the first chapter, you can write the title of the book.
+        For the context, there's what have been writting just before :
         {previous_content}
 
-        Maintenant rédige le chapitre : {chapter_title}
-        Sois cohérent, respecte la continuité et le ton.
+        Now, write the following chapter : {chapter_title}
+        Is it a ghost chapter : {is_ghost}
+        Number of words : {number_words}
         """)
                                                   
 
@@ -42,10 +47,11 @@ class ContentGeneratorAgent:
             "global_plan": global_plan,
             "previous_content": previous_content,
             "chapter_title": task["title"],
+            "is_ghost" : task['is_ghost'],
+            "number_words" : task['number_words']
         })
 
         # extraire le texte selon le type de retour (fallbacks simples)
-        print(response)
         if isinstance(response, str):
             content = response
         else:

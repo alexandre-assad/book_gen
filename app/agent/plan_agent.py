@@ -14,7 +14,7 @@ class PlanAgent:
             ResponseSchema(name="title", description="Book Title"),
             ResponseSchema(
                 name="chapters",
-                description="List of the chapters, each chapter is an object {id: str, title: str, summary: str}"
+                description="List of the chapters, each chapter is an object {id: str, title: str, summary: str, is_ghost: bool, number_words: int}"
             ),
         ]
 
@@ -27,6 +27,9 @@ class PlanAgent:
         You are a book planner specialist. You will return valid JSON with 'title' and 'chapters' list. 
         Here's an exemple of json Format : 
         {format_instructions}
+        You will : 
+        - Follow the plan, and instructions if there are some (like number of chapters, words, etc.)
+        - Construct if needed ghosts chapters : Part that are note new chapters but the following of the last one
         For the following prompt, return the plan : 
         {brief}
         """)
@@ -34,4 +37,5 @@ class PlanAgent:
         chain = prompt | llm | parser
         brief = state.get("brief", "")
         plan = chain.invoke({"brief": brief, "format_instructions": format_instructions})
+        print(plan)
         return {"plan": plan, "tasks": plan["chapters"], "results": []}

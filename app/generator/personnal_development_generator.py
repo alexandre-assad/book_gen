@@ -1,9 +1,11 @@
+from pathlib import Path
 from app.agent.content_generator_agent import ContentGeneratorAgent
 from app.agent.plan_agent import PlanAgent
 from domain.dataclass.book_state import BookState
 from langgraph.graph import StateGraph, START
 
 from app.generator.generator import Generator
+from infra.temp.temp_file_writter import TempFileWritter
 
 def aggregator(state: BookState) -> dict:
     results = state.get("results", [])
@@ -21,10 +23,9 @@ class PersonnalDevelopmentGenerator(Generator):
 
         builder.add_edge(START, "plan_agent")
         builder.add_edge("plan_agent", "sequential_content_generator")
-        builder.add_edge("sequential_content_generator", "aggregator")
 
         compiled = builder.compile()
-        final_state = compiled.invoke({"brief": "Écris un ebook Sur le QI, ~1000 mots"})
-        print("EBOOK:\n", final_state.get("ebook", "<no ebook>"))
+        final_state = compiled.invoke({"brief": "Écris un ebook Sur le QI, ~500 mots"})
+        TempFileWritter().write_content_in_file(final_state.get("ebook", "<no ebook>"), Path('tempfile/book.md'))
 
 
