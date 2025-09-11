@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 @singleton
-class DeepSeekModel:
-    def __init__(self, model_name: str = "gpt-4o") -> None:
+class Gpt4oModel:
+    def __init__(self) -> None:
         # api_key = getenv("DEEPSEEK_API_KEY")
         api_key = getenv("GPT_API_KEY")
 
@@ -15,7 +15,7 @@ class DeepSeekModel:
             raise ValueError("No API Key")
         
         self.client = OpenAI(api_key=api_key, base_url="https://api.openai.com/v1")
-        self.model_name = model_name
+        self.model_name = "gpt-4o"
 
     def chat(self, message: str, temperature: float = 0.7) -> str:
         messages = [

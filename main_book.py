@@ -1,0 +1,4 @@
+from app.generator.personnal_development_generator import PersonnalDevelopmentGenerator
+
+
+PersonnalDevelopmentGenerator().generate()
