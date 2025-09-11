@@ -1,4 +1,3 @@
-from dataclasses import dataclass, field
 
 from pathlib import Path
 from app.agent.content_generator_agent import ContentGeneratorAgent
@@ -8,6 +7,7 @@ from langgraph.graph import StateGraph, START
 
 from domain.enum.book_type import BookType
 from infra.temp.temp_file_writter import TempFileWritter
+
 
 def aggregator(state: BookState) -> dict:
     results = state.get("results", [])
@@ -35,14 +35,18 @@ class Generator:
     def generate(self, prompt: str, book_type: BookType) -> None:
         builder = StateGraph(BookState)
         builder.add_node("plan_agent", PlanAgent().generate_by_state)
-        builder.add_node("sequential_content_generator", ContentGeneratorAgent().generate)
+        builder.add_node(
+            "sequential_content_generator", ContentGeneratorAgent().generate
+        )
         builder.add_node("aggregator", aggregator)
 
         builder.add_edge(START, "plan_agent")
         builder.add_edge("plan_agent", "sequential_content_generator")
 
         compiled = builder.compile()
-        final_state = compiled.invoke({"brief": f"{self.MAP_SYSTEM_PROMPT[book_type]}\nUser brief : {prompt}"})
-        TempFileWritter().write_content_in_file(final_state.get("ebook", "<no ebook>"), Path('tempfile/book.md'))
-
-
+        final_state = compiled.invoke(
+            {"brief": f"{self.MAP_SYSTEM_PROMPT[book_type]}\nUser brief : {prompt}"}
+        )
+        TempFileWritter().write_content_in_file(
+            final_state.get("ebook", "<no ebook>"), Path("tempfile/book.md")
+        )

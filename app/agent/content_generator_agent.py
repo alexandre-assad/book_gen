@@ -7,21 +7,23 @@ from langgraph.types import Command
 class ContentGeneratorAgent:
     def __init__(self) -> None:
         pass
-        
-    def generate(self,state: BookState) -> Command:
+
+    def generate(self, state: BookState) -> Command:
         tasks = state.get("tasks", [])
         results = state.get("results", [])
 
         # si plus de tâches -> on va à l'agrégateur
         if not tasks:
-            return Command(update={"tasks": tasks, "results": results}, goto="aggregator")
+            return Command(
+                update={"tasks": tasks, "results": results}, goto="aggregator"
+            )
 
         task = tasks[0]
         previous_content = results[-1]["content"] if results else ""
         global_plan = state.get("plan")
 
-            
-        prompt = ChatPromptTemplate.from_template("""
+        prompt = ChatPromptTemplate.from_template(
+            """
         You'll written book or ebook following this plan (for coherence only, do not rewrite it) :
         {global_plan}
         You will write only the chapter that i will provide you.
@@ -37,19 +39,21 @@ class ContentGeneratorAgent:
         Now, write the following chapter : {chapter_title}
         Is it a ghost chapter : {is_ghost}
         Number of words : {number_words}
-        """)
-                                                  
+        """
+        )
 
         # composition Runnable (prompt | llm)
         model = Gpt4oModel().llm
         chain = prompt | model
-        response = chain.invoke({
-            "global_plan": global_plan,
-            "previous_content": previous_content,
-            "chapter_title": task["title"],
-            "is_ghost" : task['is_ghost'],
-            "number_words" : task['number_words']
-        })
+        response = chain.invoke(
+            {
+                "global_plan": global_plan,
+                "previous_content": previous_content,
+                "chapter_title": task["title"],
+                "is_ghost": task["is_ghost"],
+                "number_words": task["number_words"],
+            }
+        )
 
         # extraire le texte selon le type de retour (fallbacks simples)
         if isinstance(response, str):
