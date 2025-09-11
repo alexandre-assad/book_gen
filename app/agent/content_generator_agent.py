@@ -1,5 +1,7 @@
+from domain.dataclass.book_state import BookState
 from infra.model.gpt_4o_model import Gpt4oModel
 from langgraph.graph import StateGraph, MessagesState
+from langgraph.types import Command
 from json import dumps as json_dumps
 
 
@@ -9,29 +11,42 @@ class ContentGeneratorAgent:
     def __init__(self) -> None:
         ...
         
-    def generate(self, state: MessagesState):
-        tasks = state.output["tasks"]
-        results = state.output["results"]
-        if not tasks:  # toutes les tâches terminées
-            return state
+    def generate(self,state: BookState) -> Command:
+        tasks = state.get("tasks", [])
+        results = state.get("results", [])
+
+        # si plus de tâches -> on va à l'agrégateur
+        if not tasks:
+            return Command(update={"tasks": tasks, "results": results}, goto="aggregator")
 
         task = tasks[0]
         previous_content = "\n".join(r["content"] for r in results)
+        global_plan = state.get("plan")
+
         prompt = f"""
-        Génère le contenu pour le chapitre: {task['title']}.
-        Contexte déjà écrit:
-        {previous_content}
-        """
-        # Appel modèle LLM (ici pseudo-code)
+    Tu écris un ebook en suivant ce plan global :
+    {global_plan}
+
+    Contexte déjà écrit :
+    {previous_content}
+
+    Maintenant rédige le chapitre : "{task["title"]}"
+    Sois cohérent, respecte la continuité et le ton.
+    """
+
+        # composition Runnable (prompt | llm)
         model = Gpt4oModel()
-        prompt = f"{self.system_prompt}\nHere the plan : {state.output["plan"]}\n Here the title : {task['title']}\n Here the previous content : {previous_content}"
-        content = model.chat(prompt)
+        response = model.chat(prompt)
+
+        # extraire le texte selon le type de retour (fallbacks simples)
+        if isinstance(response, str):
+            content = response
+        else:
+            content = getattr(response, "content", str(response))
 
         results.append({"chapter_id": task["id"], "content": content})
-        state.output["results"] = results
-        state.output["tasks"] = tasks[1:]  # enlever la tâche traitée
+        new_tasks = tasks[1:]
 
-        # Trick: renvoyer le node vers lui-même tant qu’il reste des tâches
-        if state.output["tasks"]:
-            state.next("sequential_content_generator")
-        return state
+        # si il reste des tâches -> goto self, sinon -> aggregator
+        next_node = "sequential_content_generator" if new_tasks else "aggregator"
+        return Command(update={"tasks": new_tasks, "results": results}, goto=next_node)
