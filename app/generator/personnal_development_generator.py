@@ -19,15 +19,12 @@ class PersonnalDevelopmentGenerator(Generator):
         builder.add_node("sequential_content_generator", ContentGeneratorAgent().generate)
         builder.add_node("aggregator", aggregator)
 
-        # Entrée -> plan_agent
         builder.add_edge(START, "plan_agent")
-        # transitions (pour visualisation) — Command fera le routage effectif
         builder.add_edge("plan_agent", "sequential_content_generator")
         builder.add_edge("sequential_content_generator", "aggregator")
 
-        # --- compile et invoke
-        compiled = builder.compile()  # obligatoire avant d'exécuter. Voir docs.
-        final_state = compiled.invoke({"brief": "Écris un ebook DDD pour développeurs Python, ~3 chapitres"})
+        compiled = builder.compile()
+        final_state = compiled.invoke({"brief": "Écris un ebook Sur le QI, ~1000 mots"})
         print("EBOOK:\n", final_state.get("ebook", "<no ebook>"))
 
 
