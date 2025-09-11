@@ -7,7 +7,7 @@ load_dotenv()
 class DeepSeekModel:
     def __init__(self, model_name: str = "gpt-4o"):
         # api_key = getenv("DEEPSEEK_API_KEY")
-        api_key = getenv("GPT_API_KEY")
+        api_key = getenv("OPENAI_API_KEY")
 
         if not api_key:
             raise ValueError("No API Key")

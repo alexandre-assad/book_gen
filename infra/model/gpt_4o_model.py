@@ -8,8 +8,7 @@ load_dotenv()
 @singleton
 class Gpt4oModel:
     def __init__(self) -> None:
-        # api_key = getenv("DEEPSEEK_API_KEY")
-        api_key = getenv("GPT_API_KEY")
+        api_key = getenv("OPENAI_API_KEY")
 
         if not api_key:
             raise ValueError("No API Key")
