@@ -1,6 +1,6 @@
-
 from pathlib import Path
 from app.agent.content_generator_agent import ContentGeneratorAgent
+from app.agent.front_designer_agent import HtmlConverterAgent
 from app.agent.plan_agent import PlanAgent
 from domain.dataclass.book_state import BookState
 from langgraph.graph import StateGraph, START
@@ -20,7 +20,7 @@ class Generator:
         BookType.PersonnalDevelopment: """You are a professional writer and personal development expert with a clear, engaging, and motivational style.  
             Your task is to write a complete book (or e-book) on the topic given by the user.  
 
-            Structure the book in a way that is accessible and inspiring for a general audience:  
+            If note specify by the user, structure the book in a way that is accessible and inspiring for a general audience:  
             - Start with a powerful introduction that captures attention and explains the relevance of the topic.  
             - Divide the book into clear chapters, each covering one key idea or principle.  
             - Use practical examples, real-life stories, metaphors, and simple frameworks to make the concepts easy to understand.  
@@ -32,21 +32,29 @@ class Generator:
             """
     }
 
-    def generate(self, prompt: str, book_type: BookType) -> None:
+    def generate(self, prompt: str, book_type: BookType, is_html: bool = False) -> None:
         builder = StateGraph(BookState)
         builder.add_node("plan_agent", PlanAgent().generate_by_state)
         builder.add_node(
             "sequential_content_generator", ContentGeneratorAgent().generate
         )
         builder.add_node("aggregator", aggregator)
+        builder.add_node("html_converter", HtmlConverterAgent().convert)
 
         builder.add_edge(START, "plan_agent")
         builder.add_edge("plan_agent", "sequential_content_generator")
+        if is_html:
+            builder.add_edge("aggregator", "html_converter")
 
         compiled = builder.compile()
         final_state = compiled.invoke(
             {"brief": f"{self.MAP_SYSTEM_PROMPT[book_type]}\nUser brief : {prompt}"}
         )
-        TempFileWritter().write_content_in_file(
-            final_state.get("ebook", "<no ebook>"), Path("tempfile/book.md")
-        )
+        if is_html:
+            TempFileWritter().write_content_in_file_pdf(
+                final_state.get("ebook_html", "<no ebook>"), Path("tempfile/book.pdf")
+            )
+        else:
+            TempFileWritter().write_content_in_file(
+                final_state.get("ebook_html", "<no ebook>"), Path("tempfile/book.md")
+            )

@@ -39,6 +39,7 @@ class ContentGeneratorAgent:
         Now, write the following chapter : {chapter_title}
         Is it a ghost chapter : {is_ghost}
         Number of words : {number_words}
+        You will write it as a mardown format.
         """
         )
 

@@ -7,3 +7,4 @@ class BookState(TypedDict, total=False):
     tasks: list
     results: list
     ebook: str
+    ebook_html: str
